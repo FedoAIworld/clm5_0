@@ -121,7 +121,7 @@ module  PhotosynthesisMod
      real(r8), pointer, private :: qe_patch          (:)   ! patch quantum efficiency, used only for C4 (mol CO2 / mol photons)
      real(r8), pointer, private :: tpu_z_patch       (:,:) ! patch triose phosphate utilization rate (umol CO2/m**2/s)
      real(r8), pointer, private :: kp_z_patch        (:,:) ! patch initial slope of CO2 response curve (C4 plants)
-     real(r8), pointer, private :: theta_cj_patch    (:)   ! patch empirical curvature parameter for ac, aj photosynthesis co-limitation
+     !real(r8), pointer, private :: theta_cj_patch    (:)   ! patch empirical curvature parameter for ac, aj photosynthesis co-limitation
      real(r8), pointer, private :: bbb_patch         (:)   ! patch Ball-Berry minimum leaf conductance (umol H2O/m**2/s)
      real(r8), pointer, private :: mbb_patch         (:)   ! patch Ball-Berry slope of conductance-photosynthesis relationship
      real(r8), pointer, private :: gs_mol_patch      (:,:) ! patch leaf stomatal conductance       (umol H2O/m**2/s)
@@ -266,7 +266,7 @@ contains
     allocate(this%kc_patch          (begp:endp))           ; this%kc_patch          (:)   = nan
     allocate(this%ko_patch          (begp:endp))           ; this%ko_patch          (:)   = nan
     allocate(this%qe_patch          (begp:endp))           ; this%qe_patch          (:)   = nan
-    allocate(this%theta_cj_patch    (begp:endp))           ; this%theta_cj_patch    (:)   = nan
+    !allocate(this%theta_cj_patch    (begp:endp))           ; this%theta_cj_patch    (:)   = nan
     allocate(this%bbb_patch         (begp:endp))           ; this%bbb_patch         (:)   = nan
     allocate(this%mbb_patch         (begp:endp))           ; this%mbb_patch         (:)   = nan
     allocate(this%gb_mol_patch      (begp:endp))           ; this%gb_mol_patch      (:)   = nan
@@ -1007,10 +1007,10 @@ contains
     real(r8) :: ko25           ! Michaelis-Menten constant for O2 at 25C (Pa)
     real(r8) :: cp25           ! CO2 compensation point at 25C (Pa)
 
-    real(r8) :: vcmaxha        ! activation energy for vcmax (J/mol)
-    real(r8) :: jmaxha         ! activation energy for jmax (J/mol)
-    real(r8) :: tpuha          ! activation energy for tpu (J/mol)
-    real(r8) :: lmrha          ! activation energy for lmr (J/mol)
+    !real(r8) :: vcmaxha        ! activation energy for vcmax (J/mol)
+    !real(r8) :: jmaxha         ! activation energy for jmax (J/mol)
+    !real(r8) :: tpuha          ! activation energy for tpu (J/mol)
+    !real(r8) :: lmrha          ! activation energy for lmr (J/mol)
     real(r8) :: kcha           ! activation energy for kc (J/mol)
     real(r8) :: koha           ! activation energy for ko (J/mol)
     real(r8) :: cpha           ! activation energy for cp (J/mol)
@@ -1018,7 +1018,7 @@ contains
     real(r8) :: vcmaxhd        ! deactivation energy for vcmax (J/mol)
     real(r8) :: jmaxhd         ! deactivation energy for jmax (J/mol)
     real(r8) :: tpuhd          ! deactivation energy for tpu (J/mol)
-    real(r8) :: lmrhd          ! deactivation energy for lmr (J/mol)
+    !real(r8) :: lmrhd          ! deactivation energy for lmr (J/mol)
 
     real(r8) :: vcmaxse        ! entropy term for vcmax (J/mol/K)
     real(r8) :: jmaxse         ! entropy term for jmax (J/mol/K)
@@ -1135,6 +1135,13 @@ contains
          i_flnr     => pftcon%i_flnr                         , & ! Input:  [real(r8) (:)   ]  
          s_flnr     => pftcon%s_flnr                         , & ! Input:  [real(r8) (:)   ]  
          mbbopt     => pftcon%mbbopt                         , & ! Input:  [real(r8) (:)   ]  Ball-Berry slope of conduct/photosyn (umol H2O/umol CO2)
+         tpu25ratio => pftcon%tpu25ratio                     , & ! Input:  [real(r8) (:)   ]
+         theta_cj   => pftcon%theta_cj                       , & ! Input:  [real(r8) (:)   ]
+         jmaxha     => pftcon%jmaxha                         , & ! Input:  [real(r8) (:)   ]
+         vcmaxha    => pftcon%vcmaxha                        , & ! Input:  [real(r8) (:)   ]
+         tpuha      => pftcon%tpuha                          , & ! Input:  [real(r8) (:)   ]
+         lmrha      => pftcon%lmrha                          , & ! Input:  [real(r8) (:)   ]
+         lmrhd      => pftcon%lmrhd                          , & ! Input:  [real(r8) (:)   ]  
          ivt        => patch%itype                           , & ! Input:  [integer  (:)   ]  patch vegetation type
          forc_pbot  => atm2lnd_inst%forc_pbot_downscaled_col , & ! Input:  [real(r8) (:)   ]  atmospheric pressure (Pa)
 
@@ -1162,7 +1169,7 @@ contains
          qe         => photosyns_inst%qe_patch               , & ! Output: [real(r8) (:)   ]  quantum efficiency, used only for C4 (mol CO2 / mol photons)
          tpu_z      => photosyns_inst%tpu_z_patch            , & ! Output: [real(r8) (:,:) ]  triose phosphate utilization rate (umol CO2/m**2/s)
          kp_z       => photosyns_inst%kp_z_patch             , & ! Output: [real(r8) (:,:) ]  initial slope of CO2 response curve (C4 plants)
-         theta_cj   => photosyns_inst%theta_cj_patch         , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
+        ! theta_cj   => photosyns_inst%theta_cj_patch         , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
          bbb        => photosyns_inst%bbb_patch              , & ! Output: [real(r8) (:)   ]  Ball-Berry minimum leaf conductance (umol H2O/m**2/s)
          mbb        => photosyns_inst%mbb_patch              , & ! Output: [real(r8) (:)   ]  Ball-Berry slope of conductance-photosynthesis relationship
          rh_leaf    => photosyns_inst%rh_leaf_patch          , & ! Output: [real(r8) (:)   ]  fractional humidity at leaf surface (dimensionless)
@@ -1233,10 +1240,10 @@ contains
       kcha    = 79430._r8
       koha    = 36380._r8
       cpha    = 37830._r8
-      vcmaxha = 72000._r8
-      jmaxha  = 50000._r8
-      tpuha   = 72000._r8
-      lmrha   = 46390._r8
+      !vcmaxha = 72000._r8
+      !jmaxha  = 50000._r8
+      !tpuha   = 72000._r8
+      !lmrha   = 46390._r8
 
       ! High temperature deactivation, from:
       ! Leuning (2002) Plant, Cell and Environment 25:1205-1210
@@ -1245,7 +1252,7 @@ contains
       vcmaxhd = 200000._r8
       jmaxhd  = 200000._r8
       tpuhd   = 200000._r8
-      lmrhd   = 150650._r8
+      !lmrhd   = 150650._r8
       lmrse   = 490._r8
       lmrc    = fth25 (lmrhd, lmrse)
 
@@ -1271,11 +1278,11 @@ contains
 
          if (c3flag(p)) then
             qe(p) = 0._r8
-            theta_cj(p) = 0.98_r8
+            !theta_cj(p) = 0.98_r8
             bbbopt(p) = 10000._r8
          else
             qe(p) = 0.05_r8
-            theta_cj(p) = 0.80_r8
+            !theta_cj(p) = 0.80_r8
             bbbopt(p) = 40000._r8
          end if
 
@@ -1402,7 +1409,7 @@ contains
          ! used jmax25 = 1.97 vcmax25, from Wullschleger (1993) Journal of Experimental Botany 44:907-920.
 
          jmax25top = (2.59_r8 - 0.035_r8*min(max((t10(p)-tfrz),11._r8),35._r8)) * vcmax25top
-         tpu25top  = 0.167_r8 * vcmax25top
+         tpu25top  = tpu25ratio * vcmax25top
          kp25top   = 20000._r8 * vcmax25top
 
          ! Nitrogen scaling factor. Bonan et al (2011) JGR, 116, doi:10.1029/2010JG001593 used
@@ -1513,8 +1520,8 @@ contains
 
                if(use_luna.and.c3flag(p).and.crop(patch%itype(p))== 0)then
                   vcmax25 = photosyns_inst%vcmx25_z_patch(p,iv)
-                  jmax25 = photosyns_inst%jmx25_z_patch(p,iv)
-                  tpu25 = 0.167_r8 * vcmax25 
+                  jmax25  = photosyns_inst%jmx25_z_patch(p,iv)
+                  tpu25   = tpu25ratio * vcmax25 
                   !Implement scaling of Vcmax25 from sunlit average to shaded canopy average value. RF & GBB. 1 July 2016
                   if(phase == 'sha'.and.surfalb_inst%vcmaxcintsun_patch(p).gt.0._r8.and.nlevcan==1) then
                      vcmax25 = vcmax25 * surfalb_inst%vcmaxcintsha_patch(p)/surfalb_inst%vcmaxcintsun_patch(p)
@@ -1538,8 +1545,11 @@ contains
                jmaxc  = fth25 (jmaxhd, jmaxse)
                tpuc   = fth25 (tpuhd, tpuse)
                vcmax_z(p,iv) = vcmax25 * ft(t_veg(p), vcmaxha) * fth(t_veg(p), vcmaxhd, vcmaxse, vcmaxc)
+               !write(*,*) 'vcmaxha = ', this%vcmaxha, ' (Description: vcmaxha value at line 1549.)'
                jmax_z(p,iv) = jmax25 * ft(t_veg(p), jmaxha) * fth(t_veg(p), jmaxhd, jmaxse, jmaxc)
+               !write(*,*) 'jmaxha = ', this%jmaxha, ' (Description: jmaxha value at line 1551.)'
                tpu_z(p,iv) = tpu25 * ft(t_veg(p), tpuha) * fth(t_veg(p), tpuhd, tpuse, tpuc)
+               !write(*,*) 'tpuha = ', this%tpuha, ' (Description: tpuha value at line 1553.)'
 
                if (.not. c3flag(p)) then
                   vcmax_z(p,iv) = vcmax25 * 2._r8**((t_veg(p)-(tfrz+25._r8))/10._r8)
@@ -2341,7 +2351,8 @@ contains
          qe         => photosyns_inst%qe_patch                 , & ! Output: [real(r8) (:)   ]  quantum efficiency, used only for C4 (mol CO2 / mol photons)
          tpu_z      => photosyns_inst%tpu_z_patch              , & ! Output: [real(r8) (:,:) ]  triose phosphate utilization rate (umol CO2/m**2/s)
          kp_z       => photosyns_inst%kp_z_patch               , & ! Output: [real(r8) (:,:) ]  initial slope of CO2 response curve (C4 plants)
-         theta_cj   => photosyns_inst%theta_cj_patch           , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
+        ! theta_cj   => photosyns_inst%theta_cj_patch           , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
+         theta_cj   => pftcon%theta_cj                         , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
          bbb        => photosyns_inst%bbb_patch                , & ! Output: [real(r8) (:)   ]  Ball-Berry minimum leaf conductance (umol H2O/m**2/s)
          mbb        => photosyns_inst%mbb_patch                  & ! Output: [real(r8) (:)   ]  Ball-Berry slope of conductance-photosynthesis relationship
          )
@@ -2498,10 +2509,10 @@ contains
     real(r8) :: ko25           ! Michaelis-Menten constant for O2 at 25C (Pa)
     real(r8) :: cp25           ! CO2 compensation point at 25C (Pa)
 
-    real(r8) :: vcmaxha        ! activation energy for vcmax (J/mol)
-    real(r8) :: jmaxha         ! activation energy for jmax (J/mol)
-    real(r8) :: tpuha          ! activation energy for tpu (J/mol)
-    real(r8) :: lmrha          ! activation energy for lmr (J/mol)
+    !real(r8) :: vcmaxha        ! activation energy for vcmax (J/mol)
+    !real(r8) :: jmaxha         ! activation energy for jmax (J/mol)
+    !real(r8) :: tpuha          ! activation energy for tpu (J/mol)
+    !real(r8) :: lmrha          ! activation energy for lmr (J/mol)
     real(r8) :: kcha           ! activation energy for kc (J/mol)
     real(r8) :: koha           ! activation energy for ko (J/mol)
     real(r8) :: cpha           ! activation energy for cp (J/mol)
@@ -2509,7 +2520,7 @@ contains
     real(r8) :: vcmaxhd        ! deactivation energy for vcmax (J/mol)
     real(r8) :: jmaxhd         ! deactivation energy for jmax (J/mol)
     real(r8) :: tpuhd          ! deactivation energy for tpu (J/mol)
-    real(r8) :: lmrhd          ! deactivation energy for lmr (J/mol)
+    !real(r8) :: lmrhd          ! deactivation energy for lmr (J/mol)
 
     real(r8) :: vcmaxse        ! entropy term for vcmax (J/mol/K)
     real(r8) :: jmaxse         ! entropy term for jmax (J/mol/K)
@@ -2684,6 +2695,7 @@ contains
          c3psn      => pftcon%c3psn                          , & ! Input:  photosynthetic pathway: 0. = c4, 1. = c3
          crop       => pftcon%crop                           , & ! Input:  crop or not (0 =not crop and 1 = crop)
          leafcn     => pftcon%leafcn                         , & ! Input:  leaf C:N (gC/gN)
+         tpu25ratio => pftcon%tpu25ratio                     , & ! Ratio of tpu25top to vcmax25top (unitless)
          flnr       => pftcon%flnr                           , & ! Input:  fraction of leaf N in the Rubisco enzyme (gN Rubisco / gN leaf)
          fnitr      => pftcon%fnitr                          , & ! Input:  foliage nitrogen limitation factor (-)
          slatop     => pftcon%slatop                         , & ! Input:  specific leaf area at top of canopy, projected area basis [m^2/gC]
@@ -2695,6 +2707,11 @@ contains
          mbbopt     => pftcon%mbbopt                         , & 
          medlynintercept=> pftcon%medlynintercept            , & ! Input:  [real(r8) (:)   ]  Intercept for Medlyn stomatal conductance model method
          medlynslope=> pftcon%medlynslope                    , & ! Input:  [real(r8) (:)   ]  Slope for Medlyn stomatal conductance model method
+         jmaxha     => pftcon%jmaxha                         , & ! Input:  [real(r8) (:)   ]
+         vcmaxha    => pftcon%vcmaxha                        , & ! Input:  [real(r8) (:)   ]
+         tpuha      => pftcon%tpuha                          , & ! Input:  [real(r8) (:)   ]
+         lmrha      => pftcon%lmrha                          , & ! Input:  [real(r8) (:)   ]
+         lmrhd      => pftcon%lmrhd                          , & ! Input:  [real(r8) (:)   ]
          forc_pbot  => atm2lnd_inst%forc_pbot_downscaled_col , & ! Input:  [real(r8) (:)   ]  atmospheric pressure (Pa)
          ivt        => patch%itype                           , & ! Input:  [integer  (:)   ]  patch vegetation type
 
@@ -2721,7 +2738,8 @@ contains
          kc         => photosyns_inst%kc_patch               , & ! Output: [real(r8) (:)   ]  Michaelis-Menten constant for CO2 (Pa)
          ko         => photosyns_inst%ko_patch               , & ! Output: [real(r8) (:)   ]  Michaelis-Menten constant for O2 (Pa)
          qe         => photosyns_inst%qe_patch               , & ! Output: [real(r8) (:)   ]  quantum efficiency, used only for C4 (mol CO2 / mol photons)
-         theta_cj   => photosyns_inst%theta_cj_patch         , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
+         !theta_cj   => photosyns_inst%theta_cj_patch         , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
+         theta_cj   => pftcon%theta_cj                       , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
          bbb        => photosyns_inst%bbb_patch              , & ! Output: [real(r8) (:)   ]  Ball-Berry minimum leaf conductance (umol H2O/m**2/s)
          mbb        => photosyns_inst%mbb_patch              , & ! Output: [real(r8) (:)   ]  Ball-Berry slope of conductance-photosynthesis relationship
          rh_leaf    => photosyns_inst%rh_leaf_patch          , & ! Output: [real(r8) (:)   ]  fractional humidity at leaf surface (dimensionless)
@@ -2796,10 +2814,10 @@ contains
       kcha    = 79430._r8
       koha    = 36380._r8
       cpha    = 37830._r8
-      vcmaxha = 72000._r8
-      jmaxha  = 50000._r8
-      tpuha   = 72000._r8
-      lmrha   = 46390._r8
+      !vcmaxha = 72000._r8
+      !jmaxha  = 50000._r8
+      !tpuha   = 72000._r8
+      !lmrha   = 46390._r8
 
       ! High temperature deactivation, from:
       ! Leuning (2002) Plant, Cell and Environment 25:1205-1210
@@ -2808,7 +2826,7 @@ contains
       vcmaxhd = 200000._r8
       jmaxhd  = 200000._r8
       tpuhd   = 200000._r8
-      lmrhd   = 150650._r8
+      !lmrhd   = 150650._r8
       lmrse   = 490._r8
       lmrc    = fth25 (lmrhd, lmrse)
 
@@ -2888,11 +2906,11 @@ contains
 
          if (c3flag(p)) then
             qe(p) = 0._r8
-            theta_cj(p) = 0.98_r8
+            !theta_cj(p) = 0.98_r8
             bbbopt(p) = 10000._r8
          else
             qe(p) = 0.05_r8
-            theta_cj(p) = 0.80_r8
+            !theta_cj(p) = 0.80_r8
             bbbopt(p) = 40000._r8
          end if
  
@@ -3014,7 +3032,7 @@ contains
          ! used jmax25 = 1.97 vcmax25, from Wullschleger (1993) Journal of Experimental Botany 44:907-920.
 
          jmax25top = (2.59_r8 - 0.035_r8*min(max((t10(p)-tfrz),11._r8),35._r8)) * vcmax25top
-         tpu25top  = 0.167_r8 * vcmax25top
+         tpu25top  = tpu25ratio * vcmax25top
          kp25top   = 20000._r8 * vcmax25top
          luvcmax25top(p) = vcmax25top
          lujmax25top(p) = jmax25top
@@ -3148,8 +3166,8 @@ contains
                   vcmax25_sha = photosyns_inst%vcmx25_z_patch(p,iv)
                   jmax25_sun = photosyns_inst%jmx25_z_patch(p,iv)
                   jmax25_sha = photosyns_inst%jmx25_z_patch(p,iv)
-                  tpu25_sun = 0.167_r8 * vcmax25_sun        
-                  tpu25_sha = 0.167_r8 * vcmax25_sha        
+                  tpu25_sun = tpu25ratio * vcmax25_sun        
+                  tpu25_sha = tpu25ratio * vcmax25_sha        
                   if(surfalb_inst%vcmaxcintsun_patch(p).gt.0._r8.and.nlevcan==1) then
                     vcmax25_sha = vcmax25_sun * surfalb_inst%vcmaxcintsha_patch(p)/surfalb_inst%vcmaxcintsun_patch(p)
                     jmax25_sha  = jmax25_sun  * surfalb_inst%vcmaxcintsha_patch(p)/surfalb_inst%vcmaxcintsun_patch(p) 
@@ -3175,12 +3193,17 @@ contains
                jmaxc  = fth25 (jmaxhd, jmaxse)
                tpuc   = fth25 (tpuhd, tpuse)
                vcmax_z(p,sun,iv) = vcmax25_sun * ft(t_veg(p), vcmaxha) * fth(t_veg(p), vcmaxhd, vcmaxse, vcmaxc)
+               !write(*,*) 'vcmaxha = ', this%vcmaxha, ' (Description: vcmaxha value at line 3199.)'
                jmax_z(p,sun,iv) = jmax25_sun * ft(t_veg(p), jmaxha) * fth(t_veg(p), jmaxhd, jmaxse, jmaxc)
+               !write(*,*) 'jmaxha = ', this%jmaxha, ' (Description: jmaxha value at line 3201.)'
                tpu_z(p,sun,iv) = tpu25_sun * ft(t_veg(p), tpuha) * fth(t_veg(p), tpuhd, tpuse, tpuc)
+               !write(*,*) 'tpuha = ', this%tpuha, ' (Description: tpuha value at line 3203.)'
                vcmax_z(p,sha,iv) = vcmax25_sha * ft(t_veg(p), vcmaxha) * fth(t_veg(p), vcmaxhd, vcmaxse, vcmaxc)
+               !write(*,*) 'vcmaxha = ', this%vcmaxha, ' (Description: vcmaxha value at line 3205.)'
                jmax_z(p,sha,iv) = jmax25_sha * ft(t_veg(p), jmaxha) * fth(t_veg(p), jmaxhd, jmaxse, jmaxc)
+               !write(*,*) 'jmaxha = ', this%jmaxha, ' (Description: jmaxha value at line 3207.)'
                tpu_z(p,sha,iv) = tpu25_sha * ft(t_veg(p), tpuha) * fth(t_veg(p), tpuhd, tpuse, tpuc)
-
+               !write(*,*) 'tpuha = ', this%tpuha, ' (Description: tpuha value at line 3209.)'
                if (.not. c3flag(p)) then
                   vcmax_z(p,sun,iv) = vcmax25_sun * 2._r8**((t_veg(p)-(tfrz+25._r8))/10._r8)
                   vcmax_z(p,sun,iv) = vcmax_z(p,sun,iv) / (1._r8 + exp( 0.2_r8*((tfrz+15._r8)-t_veg(p)) ))
@@ -4018,11 +4041,13 @@ contains
          qe         => photosyns_inst%qe_patch               , & ! Output: [real(r8) (:)   ]    quantum efficiency, used only for C4 (mol CO2 / mol photons)
          tpu_z      => photosyns_inst%tpu_z_phs_patch        , & ! Output: [real(r8) (:,:,:) ]  triose phosphate utilization rate (umol CO2/m**2/s)
          kp_z       => photosyns_inst%kp_z_phs_patch         , & ! Output: [real(r8) (:,:,:) ]  initial slope of CO2 response curve (C4 plants)
-         theta_cj   => photosyns_inst%theta_cj_patch         , & ! Output: [real(r8) (:)   ]    empirical curvature parameter for ac, aj photosynthesis co-limitation
+         !theta_cj   => photosyns_inst%theta_cj_patch         , & ! Output: [real(r8) (:)   ]    empirical curvature parameter for ac, aj photosynthesis co-limitation
+         theta_cj   => pftcon%theta_cj                       , & ! Output: [real(r8) (:)   ]    empirical curvature parameter for ac, aj photosynthesis co-limitation
          bbb        => photosyns_inst%bbb_patch              , & ! Output: [real(r8) (:)   ]  Ball-Berry minimum leaf conductance (umol H2O/m**2/s)
          mbb        => photosyns_inst%mbb_patch              , & ! Output: [real(r8) (:)   ]  Ball-Berry slope of conductance-photosynthesis relationship
          an_sun     => photosyns_inst%an_sun_patch           , & ! Output: [real(r8) (:,:) ]  net sunlit leaf photosynthesis (umol CO2/m**2/s)
-         an_sha     => photosyns_inst%an_sha_patch             & ! Output: [real(r8) (:,:) ]  net shaded leaf photosynthesis (umol CO2/m**2/s)
+         an_sha     => photosyns_inst%an_sha_patch           , & ! Output: [real(r8) (:,:) ]  net shaded leaf photosynthesis (umol CO2/m**2/s)
+         ivt        => patch%itype                             & ! Input:  [integer  (:)   ]  patch vegetation type
          )
     
     !------------------------------------------------------------------------------

@@ -204,6 +204,17 @@ module pftconMod
      real(r8), allocatable :: pprod10       (:)   ! proportion of deadstem to 10-yr product pool
      real(r8), allocatable :: pprod100      (:)   ! proportion of deadstem to 100-yr product pool
      real(r8), allocatable :: pprodharv10   (:)   ! harvest mortality proportion of deadstem to 10-yr pool
+     real(r8), allocatable :: theta_cj      (:)   ! Photosynthesis paramter: Empirical curvature parameter for ac, aj photosynthesis co-limitation (unitless)
+     real(r8) :: Jmaxb1      ! the baseline proportion of nitrogen allocated for electron transport (J)
+     real(r8) :: Jmaxb0      ! Photosynthesis parameter: the baseline proportion of nitrogen allocated for electron transport (J)
+     real(r8) :: jmaxha      ! Acclimation parameter: activation energy for jmax (J/mol)
+     real(r8) :: fff         ! Soil hydrology parameter: decay factor for fractional saturated area (1/m)
+     real(r8) :: lmrha       ! Acclimation paramter: activation energy for lmr (J/mol)
+     real(r8) :: lmrhd       ! Acclimation paramter: deactivation energy for lmrh (J/mol)
+     real(r8) :: tpu25ratio  ! Ratio of tpu25top to vcmax25top (unitless)
+     real(r8) :: tpuha       ! Acclimatiom paramter: activation energy for tpu
+     real(r8) :: vcmaxha     ! Acclimatiom paramter: activation energy for vcmax (J/mol)
+     real(r8) :: Wc2Wjb0     ! Photosynthesis parameter: the baseline ratio of rubisco limited rate vs light limited photosynthetic rate (Wc:Wj)
 
      ! pft paraemeters for fire code
      real(r8), allocatable :: cc_leaf       (:)
@@ -459,7 +470,17 @@ contains
     allocate( this%fun_cn_flex_b (0:mxpft) )
     allocate( this%fun_cn_flex_c (0:mxpft) )
     allocate( this%FUN_fracfixers(0:mxpft) )
-    
+    !allocate( this%Jmaxb0        (0:mxpft) )
+    !allocate( this%jmaxha        (0:mxpft) )
+    !allocate( this%fff           (0:mxpft) )
+    !allocate( this%lmrha         (0:mxpft) )
+    !allocate( this%lmrhd         (0:mxpft) )
+    allocate( this%theta_cj      (0:mxpft) )
+    !allocate( this%tpu25ratio    (0:mxpft) )
+    !allocate( this%tpuha         (0:mxpft) )
+    !allocate( this%vcmaxha       (0:mxpft) )
+    !allocate( this%Wc2Wjb0       (0:mxpft) )
+    !allocate( this%Jmaxb1        (0:mxpft) )
  
   end subroutine InitAllocate
 
@@ -963,6 +984,52 @@ contains
     call ncd_io('max_SH_planting_date', this%mxSHplantdate, 'read', ncid, readvar=readv)  
     if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
 
+    call ncd_io('Jmaxb0', this%Jmaxb0, 'read', ncid, readvar=readv)  
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+
+    call ncd_io('jmaxha', this%jmaxha, 'read', ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+
+    call ncd_io('fff', this%fff, 'read', ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+
+    call ncd_io('lmrha', this%lmrha, 'read', ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+
+    call ncd_io('lmrhd', this%lmrhd, 'read', ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+
+    call ncd_io('theta_cj', this%theta_cj, 'read', ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+
+    call ncd_io('tpu25ratio', this%tpu25ratio, 'read', ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+
+    call ncd_io('tpuha', this%tpuha, 'read', ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+
+    call ncd_io('vcmaxha', this%vcmaxha, 'read', ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+
+    call ncd_io('Wc2Wjb0', this%Wc2Wjb0, 'read', ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+    
+    call ncd_io('Jmaxb1', this%Jmaxb1, 'read', ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(sourcefile, __LINE__))
+
+    ! Add write commands to print the values of specific parameters along with descriptions
+    write(*, *) 'Jmaxb0 = ',     this%Jmaxb0,     ' (Description: Value of Jmaxb0 used in the calculation)'
+    write(*, *) 'Jmaxb1 = ',     this%Jmaxb1,     ' (Description: Value of Jmaxb1 used in the calculation)'
+    write(*, *) 'jmaxha = ',     this%jmaxha,     ' (Description: Value of jmaxha used in the calculation)'
+    write(*, *) 'fff    = ',     this%fff,        ' (Description: Value of fff used in the calculation)'
+    write(*, *) 'lmrha = ',      this%lmrha,      ' (Description: Value of lmrha used in the calculation)'
+    write(*, *) 'lmrhd = ',      this%lmrhd,      ' (Description: Value of lmrhd used in the calculation)'
+    write(*, *) 'theta_cj = ',   this%theta_cj,   ' (Description: Value of theta_cj used in the calculation)'
+    write(*, *) 'tpu25ratio = ', this%tpu25ratio, ' (Description: Value of tpu25ratio used in the calculation)'
+    write(*, *) 'tpuha = ',      this%tpuha,      ' (Description: Value of tpuha used in the calculation)'
+    write(*, *) 'vcmaxha = ',    this%vcmaxha,    ' (Description: Value of vcmaxha used in the calculation)'
+    write(*, *) 'Wc2Wjb0 = ',    this%Wc2Wjb0,    ' (Description: Value of Wc2Wjb0 used in the calculation)' 
+
     !
     ! Constants
     !
@@ -1374,6 +1441,16 @@ contains
     deallocate( this%fun_cn_flex_b)
     deallocate( this%fun_cn_flex_c)
     deallocate( this%FUN_fracfixers)
+    deallocate( this%theta_cj)
+    !deallocate( this%Jmaxb0)
+    !deallocate( this%jmaxha)
+    !deallocate( this%fff)
+    !deallocate( this%lmrha)
+    !deallocate( this%lmrhd)
+    !deallocate( this%theta_cj)
+    !deallocate( this%tpuha)
+    !deallocate( this%vcmaxha)
+    !deallocate( this%Wc2Wjb0)
     
   end subroutine Clean
 

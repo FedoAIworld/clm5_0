@@ -64,9 +64,9 @@ module LunaMod
   real(r8), parameter :: CO2ref = 380.0_r8                   ! reference CO2 concentration for calculation of reference NUE. 
   real(r8), parameter :: forc_pbot_ref = 101325.0_r8       ! reference air pressure for calculation of reference NUE
   real(r8), parameter :: Q10Enz = 2.0_r8                   ! Q10 value for enzyme decay rate
-  real(r8), parameter :: Jmaxb0 = 0.0311_r8                ! the baseline proportion of nitrogen allocated for electron transport (J)     
+  !real(r8), parameter :: Jmaxb0 = 0.0311_r8                ! the baseline proportion of nitrogen allocated for electron transport (J)     
   real(r8)            :: Jmaxb1 = 0.1_r8                   ! the baseline proportion of nitrogen allocated for electron transport (J)    
-  real(r8), parameter :: Wc2Wjb0 = 0.8054_r8               ! the baseline ratio of rubisco limited rate vs light limited photosynthetic rate (Wc:Wj) 
+  !real(r8), parameter :: Wc2Wjb0 = 0.8054_r8               ! the baseline ratio of rubisco limited rate vs light limited photosynthetic rate (Wc:Wj) 
   real(r8), parameter :: relhExp = 6.0999_r8               ! electron transport parameters related to relative humidity
   real(r8), parameter :: Enzyme_turnover_daily = 0.1_r8    ! the daily turnover rate for photosynthetic enzyme at 25oC in view of ~7 days of half-life time for Rubisco (Suzuki et al. 2001)
   real(r8), parameter :: NMCp25 = 0.715_r8                 ! estimated by assuming 80% maintenance respiration is used for photosynthesis enzyme maintenance
@@ -110,6 +110,7 @@ module LunaMod
     character(len=*), parameter :: nmlname = 'luna'
     !-----------------------------------------------------------------------
     namelist /luna/ Jmaxb1
+    
 
     ! Initialize options to default values, in case they are not specified in
     ! the namelist
@@ -130,6 +131,7 @@ module LunaMod
        end if
        call relavu( unitn )
     end if
+    Jmaxb1 = pftcon%Jmaxb1
 
     call shr_mpi_bcast (Jmaxb1, mpicom)
 
@@ -271,7 +273,9 @@ module LunaMod
     vcmx25_z      => photosyns_inst%vcmx25_z_patch                    , & ! Output: [real(r8) (:,:) ] patch leaf Vc,max25 (umol/m2 leaf/s) for canopy layer 
     jmx25_z       => photosyns_inst%jmx25_z_patch                     , & ! Output: [real(r8) (:,:) ] patch leaf Jmax25 (umol electron/m**2/s) for canopy layer
     pnlc_z        => photosyns_inst%pnlc_z_patch                      , & ! Output: [real(r8) (:,:) ] patch proportion of leaf nitrogen allocated for light capture for canopy layer 
-    enzs_z        => photosyns_inst%enzs_z_patch                        & ! Output: [real(r8) (:,:) ] enzyme decay status 1.0-fully active; 0-all decayed during stress
+    enzs_z        => photosyns_inst%enzs_z_patch                      , & ! Output: [real(r8) (:,:) ] enzyme decay status 1.0-fully active; 0-all decayed during stress
+    Jmaxb0        => pftcon%Jmaxb0                                    , & ! Input:  [real(r8) (:)   ] the baseline proportion of nitrogen allocated for electron transport (J) (added by F.Eloundou)
+    Wc2Wjb0       => pftcon%Wc2Wjb0                                     & ! Input:  [real(r8) (:)   ] the baseline ratio of rubisco limited rate vs light limited photosynthetic rate (Wc:Wj) (added by F.Eloundou)
     )  
     !----------------------------------------------------------------------------------------------------------------------------------------------------------
     !set timestep
@@ -876,7 +880,7 @@ subroutine NitrogenAllocation(FNCa,forc_pbot10, relh10, CO2a10,O2a10, PARi10,PAR
      call Nitrogen_investments (KcKjFlag,FNCa, Nlc, forc_pbot10, relh10, CO2a10,O2a10, PARi10c, PARimx10c,rb10, hourpd, tair10, &
           tleafd10c,tleafn10c, &
           Kj2Kc, Wc2Wjb0, JmaxCoef, Fc,Fj, NUEc, NUEj, NUEcref, NUEjref, NUEr, Kc, Kj, ci, &
-          Vcmax, Jmax,JmeanL,JmaxL, Net, Ncb, Nresp, PSN, RESP)
+          Vcmax, Jmax,JmeanL,JmaxL, Net, Ncb, Nresp, PSN, RESP, Jmaxb0)
 
      Npsntarget = Nlc + Ncb + Net                                                         !target nitrogen allocated to photosynthesis, which may be lower or higher than Npsn_avail
      PNlcoldi = Nlc / FNCa
@@ -890,7 +894,7 @@ subroutine NitrogenAllocation(FNCa,forc_pbot10, relh10, CO2a10,O2a10, PARi10,PAR
         call Nitrogen_investments (KcKjFlag,FNCa, Nlc2, forc_pbot10, relh10, CO2a10,O2a10, PARi10c, PARimx10c,rb10, hourpd, &
              tair10, tleafd10c,tleafn10c, &
              Kj2Kc, Wc2Wjb0, JmaxCoef, Fc,Fj, NUEc, NUEj, NUEcref, NUEjref,NUEr, Kc, Kj, ci, &
-             Vcmax, Jmax,JmeanL,JmaxL, Net2, Ncb2, Nresp2, PSN2, RESP2)
+             Vcmax, Jmax,JmeanL,JmaxL, Net2, Ncb2, Nresp2, PSN2, RESP2, Jmaxb0)
 
         Npsntarget2 = Nlc2 + Ncb2 + Net2
         !update the nitrogen change
@@ -918,7 +922,7 @@ subroutine NitrogenAllocation(FNCa,forc_pbot10, relh10, CO2a10,O2a10, PARi10,PAR
         call Nitrogen_investments (KcKjFlag,FNCa, Nlc1,forc_pbot10, relh10, CO2a10,O2a10, PARi10c, PARimx10c,rb10, hourpd, &
              tair10, tleafd10c,tleafn10c, &
              Kj2Kc, Wc2Wjb0, JmaxCoef, Fc,Fj, NUEc, NUEj, NUEcref, NUEjref,NUEr, Kc, Kj, ci,&
-             Vcmax, Jmax,JmeanL,JmaxL, Net1, Ncb1, Nresp1, PSN1, RESP1)
+             Vcmax, Jmax,JmeanL,JmaxL, Net1, Ncb1, Nresp1, PSN1, RESP1, Jmaxb0)
         Npsntarget1 = Nlc1 + Ncb1 + Net1
         Carboncost1 = (Npsntarget - Npsntarget1) * NMCp25 * Cv * (RespTBernacchi(tleafd10c) * hourpd + &
              RespTBernacchi(tleafn10c) * (24.0_r8  - hourpd))
@@ -948,7 +952,7 @@ end subroutine NitrogenAllocation
 subroutine Nitrogen_investments (KcKjFlag, FNCa, Nlc, forc_pbot10, relh10, &
      CO2a10, O2a10, PARi10, PARimx10, rb10, hourpd, tair10, tleafd10, tleafn10, &
      Kj2Kc, Wc2Wjb0, JmaxCoef, Fc, Fj, NUEc, NUEj, NUEcref, NUEjref, NUEr, Kc, &
-     Kj, ci, Vcmax, Jmax, JmeanL, JmaxL, Net, Ncb, Nresp, PSN, RESP)
+     Kj, ci, Vcmax, Jmax, JmeanL, JmaxL, Net, Ncb, Nresp, PSN, RESP, Jmaxb0)
   implicit none
   integer,  intent (in) :: KcKjFlag                   !flag to indicate whether to update the Kc and Kj using the photosynthesis subroutine; 0--Kc and Kj need to be calculated; 1--Kc and Kj is prescribed.
   real(r8), intent (in) :: FNCa                       !Area based functional nitrogen content (g N/m2 leaf)
@@ -966,6 +970,7 @@ subroutine Nitrogen_investments (KcKjFlag, FNCa, Nlc, forc_pbot10, relh10, &
   real(r8), intent (in) :: tleafn10                   !10-day mean nighttime leaf temperature (oC) 
   real(r8), intent (in) :: Kj2Kc                      !ratio:  Kj / Kc
   real(r8), intent (in) :: Wc2Wjb0                    !the baseline ratio of rubisco-limited rate vs light-limited photosynthetic rate (Wc:Wj)
+  real(r8), intent (in) :: Jmaxb0                     ! the baseline proportion of nitrogen allocated for electron transport (J)
   real(r8), intent (in) :: JmaxCoef                   !coefficient determining the response of electron transport rate to light availability (unitless) and humidity
   real(r8), intent (in) :: Fc                         !the temperature adjustment factor for Vcmax 
   real(r8), intent (in) :: Fj                         !the temperature adjustment factor for Jmax 
@@ -999,7 +1004,7 @@ subroutine Nitrogen_investments (KcKjFlag, FNCa, Nlc, forc_pbot10, relh10, &
   real(r8) :: Wj                                      !light limited photosynthetic rate (umol/m2/s)
   real(r8) :: NUECHG                                  !the nitrogen use efficiency change under current conidtions compared to reference climate conditions (25oC and 385 ppm )
   real(r8), parameter :: leaf_mr_vcm = 0.015_r8       !Scalar constant of leaf respiration with Vcmax (should use parameter in CanopyStateMod)
-  
+
   theta_cj = 0.95_r8
   theta = 0.292_r8 / (1.0_r8 + 0.076_r8 / (Nlc * Cb))
   ELTRNabsorb = theta * PARi10

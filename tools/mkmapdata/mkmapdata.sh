@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 #----------------------------------------------------------------------
 #
 # mkmapdata.sh
@@ -28,9 +28,9 @@
 #
 #----------------------------------------------------------------------
 echo $0
-dir=${0%/*}
+dir=$MKMPDIR
 if [ "$dir" = "$0" ];then
-  dir="."
+    dir="."
 fi
 outfilelist="clm.input_data_list"
 default_res="10x15"
@@ -39,7 +39,8 @@ default_res="10x15"
 # SET SOME DEFAULTS -- if not set via env variables outside
 
 if [ -z "$CSMDATA" ]; then
-   CSMDATA=/glade/p/cesm/cseg/inputdata
+   CSMDATA=/p/scratch/cjicg41/eloundou1/CLM5_DATA/inputdata
+#/glade/p/cesm/cseg/inputdata
 fi
 #----------------------------------------------------------------------
 # Usage subroutine
