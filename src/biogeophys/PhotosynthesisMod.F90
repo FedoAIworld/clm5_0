@@ -86,8 +86,10 @@ module  PhotosynthesisMod
      real(r8), allocatable, private :: ck                 (:,:)
      real(r8), allocatable, public  :: psi_soil_ref       (:)
      real(r8), allocatable, private :: lmr_intercept_atkin(:)
+     real(r8), allocatable, private :: theta_cj           (:) ! Empirical curvature parameter for ac, aj photosynthesis co-limitation (unitless)
   contains
-     procedure, private :: allocParams
+     procedure, private :: allocParams       ! Allocate the parameters
+     procedure, private :: cleanParams       ! Deallocate parameters from member 
   end type photo_params_type
   !
   type(photo_params_type), public, protected :: params_inst  ! params_inst is populated in readParamsMod 
@@ -198,6 +200,7 @@ module  PhotosynthesisMod
      procedure, public  :: ReadParams
      procedure, public  :: TimeStepInit
      procedure, public  :: NewPatchInit
+     procedure, public  :: Clean
 
      ! Private procedures
      procedure, private :: InitAllocate
@@ -330,6 +333,103 @@ contains
     endif
 
   end subroutine InitAllocate
+  
+  !-----------------------------------------------------------------------
+  subroutine Clean(this)
+    !
+    ! !ARGUMENTS:
+    class(photosyns_type) :: this
+    !
+    ! !LOCAL VARIABLES:
+    !---------------------------------------------------------------------
+
+    call params_inst%cleanParams()
+    deallocate(this%c3flag_patch      )
+    deallocate(this%ac_phs_patch      )
+    deallocate(this%aj_phs_patch      )
+    deallocate(this%ap_phs_patch      )
+    deallocate(this%ag_phs_patch      )
+    deallocate(this%an_sun_patch      )
+    deallocate(this%an_sha_patch      )
+    deallocate(this%vcmax_z_phs_patch )
+    deallocate(this%tpu_z_phs_patch   )
+    deallocate(this%kp_z_phs_patch    )
+    deallocate(this%gs_mol_sun_patch  )
+    deallocate(this%gs_mol_sha_patch  )
+    deallocate(this%gs_mol_sun_ln_patch )
+    deallocate(this%gs_mol_sha_ln_patch )
+    deallocate(this%ac_patch          )
+    deallocate(this%aj_patch          )
+    deallocate(this%ap_patch          )
+    deallocate(this%ag_patch          )
+    deallocate(this%an_patch          )
+    deallocate(this%vcmax_z_patch     )
+    deallocate(this%tpu_z_patch       )
+    deallocate(this%kp_z_patch        )
+    deallocate(this%gs_mol_patch      )
+    deallocate(this%cp_patch          )
+    deallocate(this%kc_patch          )
+    deallocate(this%ko_patch          )
+    deallocate(this%qe_patch          )
+    deallocate(this%bbb_patch         )
+    deallocate(this%mbb_patch         )
+    deallocate(this%gb_mol_patch      )
+    deallocate(this%rh_leaf_patch     )
+    !deallocate(this%vpd_can_patch     )
+    deallocate(this%psnsun_patch      )
+    deallocate(this%psnsha_patch      )
+    deallocate(this%c13_psnsun_patch  )
+    deallocate(this%c13_psnsha_patch  )
+    deallocate(this%c14_psnsun_patch  )
+    deallocate(this%c14_psnsha_patch  )
+
+    deallocate(this%psnsun_z_patch    )
+    deallocate(this%psnsha_z_patch    )
+    deallocate(this%psnsun_wc_patch   )
+    deallocate(this%psnsha_wc_patch   )
+    deallocate(this%psnsun_wj_patch   )
+    deallocate(this%psnsha_wj_patch   )
+    deallocate(this%psnsun_wp_patch   )
+    deallocate(this%psnsha_wp_patch   )
+    deallocate(this%fpsn_patch        )
+    deallocate(this%fpsn_wc_patch     )
+    deallocate(this%fpsn_wj_patch     )
+    deallocate(this%fpsn_wp_patch     )
+
+    deallocate(this%lnca_patch        )
+
+    deallocate(this%lmrsun_z_patch    )
+    deallocate(this%lmrsha_z_patch    )
+    deallocate(this%lmrsun_patch      )
+    deallocate(this%lmrsha_patch      )
+
+    deallocate(this%alphapsnsun_patch )
+    deallocate(this%alphapsnsha_patch )
+    deallocate(this%rc13_canair_patch )
+    deallocate(this%rc13_psnsun_patch )
+    deallocate(this%rc13_psnsha_patch )
+
+    deallocate(this%cisun_z_patch     )
+    deallocate(this%cisha_z_patch     )
+
+    deallocate(this%rssun_z_patch     )
+    deallocate(this%rssha_z_patch     )
+    deallocate(this%rssun_patch       )
+    deallocate(this%rssha_patch       )
+    deallocate(this%luvcmax25top_patch)
+    deallocate(this%lujmax25top_patch )
+    deallocate(this%lutpu25top_patch  )
+!!
+    if(use_luna)then
+      deallocate(this%vcmx25_z_patch  )
+      deallocate(this%jmx25_z_patch   )
+      deallocate(this%pnlc_z_patch    )
+      deallocate(this%fpsn24_patch    )
+      deallocate(this%enzs_z_patch    )
+    endif
+
+  end subroutine Clean
+
 
   !-----------------------------------------------------------------------
   subroutine InitHistory(this, bounds)
@@ -610,6 +710,7 @@ contains
     ! allocate parameters
 
     allocate( this%krmax       (0:mxpft) )          ; this%krmax(:)        = nan
+    allocate( this%theta_cj    (0:mxpft) )          ; this%theta_cj(:)     = nan
     allocate( this%kmax        (0:mxpft,nvegwcs) )  ; this%kmax(:,:)       = nan
     allocate( this%psi50       (0:mxpft,nvegwcs) )  ; this%psi50(:,:)      = nan
     allocate( this%ck          (0:mxpft,nvegwcs) )  ; this%ck(:,:)         = nan
@@ -621,6 +722,28 @@ contains
     end if
 
   end subroutine allocParams
+
+  !-----------------------------------------------------------------------
+  subroutine cleanParams(this)
+    !
+    implicit none
+
+    ! !ARGUMENTS:
+    class(photo_params_type) :: this
+    !
+    ! !LOCAL VARIABLES:
+    character(len=32) :: subname = 'cleanParams'
+    !---------------------------------------------------------------------
+
+    ! deallocate parameters
+    
+    deallocate( this%krmax      )
+    deallocate( this%theta_cj   )
+    deallocate( this%kmax       )
+    deallocate( this%psi50      )
+    deallocate( this%ck         )
+
+  end subroutine cleanParams
 
   !-----------------------------------------------------------------------
   subroutine readParams ( this, ncid )
@@ -659,6 +782,10 @@ contains
     call ncd_io(varname=trim(tString),data=temp1d, flag='read', ncid=ncid, readvar=readv)
     if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(sourcefile, __LINE__))
     params_inst%lmr_intercept_atkin=temp1d
+    tString = "theta_cj"
+    call ncd_io(varname=trim(tString),data=temp1d, flag='read', ncid=ncid, readvar=readv)
+    if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(sourcefile, __LINE__))
+    params_inst%theta_cj=temp1d
     tString = "kmax"
     call ncd_io(varname=trim(tString),data=temp2d, flag='read', ncid=ncid, readvar=readv)
     if ( .not. readv ) call endrun(msg=trim(errCode)//trim(tString)//errMsg(sourcefile, __LINE__))
@@ -1046,7 +1173,7 @@ contains
     real(r8) :: sco               ! relative specificity of rubisco
     real(r8) :: ft                ! photosynthesis temperature response (statement function)
     real(r8) :: fth               ! photosynthesis temperature inhibition (statement function)
-    real(r8) :: fth25             ! ccaling factor for photosynthesis temperature inhibition (statement function)
+    real(r8) :: fth25             ! scaling factor for photosynthesis temperature inhibition (statement function)
     real(r8) :: tl                ! leaf temperature in photosynthesis temperature function (K)
     real(r8) :: ha                ! activation energy in photosynthesis temperature function (J/mol)
     real(r8) :: hd                ! deactivation energy in photosynthesis temperature function (J/mol)
@@ -1136,7 +1263,7 @@ contains
          s_flnr     => pftcon%s_flnr                         , & ! Input:  [real(r8) (:)   ]  
          mbbopt     => pftcon%mbbopt                         , & ! Input:  [real(r8) (:)   ]  Ball-Berry slope of conduct/photosyn (umol H2O/umol CO2)
          tpu25ratio => pftcon%tpu25ratio                     , & ! Input:  [real(r8) (:)   ]
-         theta_cj   => pftcon%theta_cj                       , & ! Input:  [real(r8) (:)   ]
+         !theta_cj   => pftcon%theta_cj                       , & ! Input:  [real(r8) (:)   ]
          jmaxha     => pftcon%jmaxha                         , & ! Input:  [real(r8) (:)   ]
          vcmaxha    => pftcon%vcmaxha                        , & ! Input:  [real(r8) (:)   ]
          tpuha      => pftcon%tpuha                          , & ! Input:  [real(r8) (:)   ]
@@ -1255,6 +1382,7 @@ contains
       !lmrhd   = 150650._r8
       lmrse   = 490._r8
       lmrc    = fth25 (lmrhd, lmrse)
+      write(*,*) 'lmrhd = ', pftcon%lmrhd, ' (Description: lmrhd value at line 1258.)'
 
       ! Miscellaneous parameters, from Bonan et al (2011) JGR, 116, doi:10.1029/2010JG001593
 
@@ -1410,6 +1538,7 @@ contains
 
          jmax25top = (2.59_r8 - 0.035_r8*min(max((t10(p)-tfrz),11._r8),35._r8)) * vcmax25top
          tpu25top  = tpu25ratio * vcmax25top
+         write(*,*) 'tpu25ratio = ', pftcon%tpu25ratio, ' (Description: tpu25ratio value at line 1414.)'
          kp25top   = 20000._r8 * vcmax25top
 
          ! Nitrogen scaling factor. Bonan et al (2011) JGR, 116, doi:10.1029/2010JG001593 used
@@ -1521,7 +1650,8 @@ contains
                if(use_luna.and.c3flag(p).and.crop(patch%itype(p))== 0)then
                   vcmax25 = photosyns_inst%vcmx25_z_patch(p,iv)
                   jmax25  = photosyns_inst%jmx25_z_patch(p,iv)
-                  tpu25   = tpu25ratio * vcmax25 
+                  tpu25   = tpu25ratio * vcmax25
+                  write(*,*) 'tpu25ratio = ', pftcon%tpu25ratio, ' (Description: tpu25ratio value at line 1527.)' 
                   !Implement scaling of Vcmax25 from sunlit average to shaded canopy average value. RF & GBB. 1 July 2016
                   if(phase == 'sha'.and.surfalb_inst%vcmaxcintsun_patch(p).gt.0._r8.and.nlevcan==1) then
                      vcmax25 = vcmax25 * surfalb_inst%vcmaxcintsha_patch(p)/surfalb_inst%vcmaxcintsun_patch(p)
@@ -1545,11 +1675,11 @@ contains
                jmaxc  = fth25 (jmaxhd, jmaxse)
                tpuc   = fth25 (tpuhd, tpuse)
                vcmax_z(p,iv) = vcmax25 * ft(t_veg(p), vcmaxha) * fth(t_veg(p), vcmaxhd, vcmaxse, vcmaxc)
-               !write(*,*) 'vcmaxha = ', this%vcmaxha, ' (Description: vcmaxha value at line 1549.)'
+               write(*,*) 'vcmaxha = ', pftcon%vcmaxha, ' (Description: vcmaxha value at line 1551.)'
                jmax_z(p,iv) = jmax25 * ft(t_veg(p), jmaxha) * fth(t_veg(p), jmaxhd, jmaxse, jmaxc)
-               !write(*,*) 'jmaxha = ', this%jmaxha, ' (Description: jmaxha value at line 1551.)'
+               write(*,*) 'jmaxha = ', pftcon%jmaxha, ' (Description: jmaxha value at line 1553.)'
                tpu_z(p,iv) = tpu25 * ft(t_veg(p), tpuha) * fth(t_veg(p), tpuhd, tpuse, tpuc)
-               !write(*,*) 'tpuha = ', this%tpuha, ' (Description: tpuha value at line 1553.)'
+               write(*,*) 'tpuha = ', pftcon%tpuha, ' (Description: tpuha value at line 1555.)'
 
                if (.not. c3flag(p)) then
                   vcmax_z(p,iv) = vcmax25 * 2._r8**((t_veg(p)-(tfrz+25._r8))/10._r8)
@@ -2311,19 +2441,19 @@ contains
     ! the relevant data types.
     !
     !!ARGUMENTS:
-    real(r8)             , intent(in)    :: ci       ! intracellular leaf CO2 (Pa)
-    real(r8)             , intent(in)    :: lmr_z    ! canopy layer: leaf maintenance respiration rate (umol CO2/m**2/s)
-    real(r8)             , intent(in)    :: par_z    ! par absorbed per unit lai for canopy layer (w/m**2)
-    real(r8)             , intent(in)    :: gb_mol   ! leaf boundary layer conductance (umol H2O/m**2/s)
-    real(r8)             , intent(in)    :: je       ! electron transport rate (umol electrons/m**2/s)
-    real(r8)             , intent(in)    :: cair     ! Atmospheric CO2 partial pressure (Pa)
-    real(r8)             , intent(in)    :: oair     ! Atmospheric O2 partial pressure (Pa)
-    real(r8)             , intent(in)    :: rh_can   ! canopy air realtive humidity
-    integer              , intent(in)    :: p, iv, c ! pft, vegetation type and column indexes
-    real(r8)             , intent(out)   :: fval     ! return function of the value f(ci)
-    real(r8)             , intent(out)   :: gs_mol   ! leaf stomatal conductance (umol H2O/m**2/s)
-    type(atm2lnd_type)   , intent(in)    :: atm2lnd_inst
-    type(photosyns_type) , intent(inout) :: photosyns_inst
+    real(r8)             , intent(in)      :: ci       ! intracellular leaf CO2 (Pa)
+    real(r8)             , intent(in)      :: lmr_z    ! canopy layer: leaf maintenance respiration rate (umol CO2/m**2/s)
+    real(r8)             , intent(in)      :: par_z    ! par absorbed per unit lai for canopy layer (w/m**2)
+    real(r8)             , intent(in)      :: gb_mol   ! leaf boundary layer conductance (umol H2O/m**2/s)
+    real(r8)             , intent(in)      :: je       ! electron transport rate (umol electrons/m**2/s)
+    real(r8)             , intent(in)      :: cair     ! Atmospheric CO2 partial pressure (Pa)
+    real(r8)             , intent(in)      :: oair     ! Atmospheric O2 partial pressure (Pa)
+    real(r8)             , intent(in)      :: rh_can   ! canopy air realtive humidity
+    integer              , intent(in)      :: p, iv, c ! pft, vegetation type and column indexes
+    real(r8)             , intent(out)     :: fval     ! return function of the value f(ci)
+    real(r8)             , intent(inout)   :: gs_mol   ! leaf stomatal conductance (umol H2O/m**2/s)
+    type(atm2lnd_type)   , intent(in)      :: atm2lnd_inst
+    type(photosyns_type) , intent(inout)   :: photosyns_inst
     !
     !local variables
     real(r8) :: ai                  ! intermediate co-limited photosynthesis (umol CO2/m**2/s)
@@ -2351,10 +2481,9 @@ contains
          qe         => photosyns_inst%qe_patch                 , & ! Output: [real(r8) (:)   ]  quantum efficiency, used only for C4 (mol CO2 / mol photons)
          tpu_z      => photosyns_inst%tpu_z_patch              , & ! Output: [real(r8) (:,:) ]  triose phosphate utilization rate (umol CO2/m**2/s)
          kp_z       => photosyns_inst%kp_z_patch               , & ! Output: [real(r8) (:,:) ]  initial slope of CO2 response curve (C4 plants)
-        ! theta_cj   => photosyns_inst%theta_cj_patch           , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
-         theta_cj   => pftcon%theta_cj                         , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
          bbb        => photosyns_inst%bbb_patch                , & ! Output: [real(r8) (:)   ]  Ball-Berry minimum leaf conductance (umol H2O/m**2/s)
-         mbb        => photosyns_inst%mbb_patch                  & ! Output: [real(r8) (:)   ]  Ball-Berry slope of conductance-photosynthesis relationship
+         mbb        => photosyns_inst%mbb_patch                , & ! Output: [real(r8) (:)   ]  Ball-Berry slope of conductance-photosynthesis relationship
+         ivt        => patch%itype                               & ! Input:  [integer  (:)   ]  patch vegetation type
          )
 
       ! Miscellaneous parameters, from Bonan et al (2011) JGR, 116, doi:10.1029/2010JG001593
@@ -2387,7 +2516,7 @@ contains
 
       ! Gross photosynthesis. First co-limit ac and aj. Then co-limit ap
 
-      aquad = theta_cj(p)
+      aquad = params_inst%theta_cj(ivt(p))
       bquad = -(ac(p,iv) + aj(p,iv))
       cquad = ac(p,iv) * aj(p,iv)
       call quadratic (aquad, bquad, cquad, r1, r2)
@@ -2739,7 +2868,7 @@ contains
          ko         => photosyns_inst%ko_patch               , & ! Output: [real(r8) (:)   ]  Michaelis-Menten constant for O2 (Pa)
          qe         => photosyns_inst%qe_patch               , & ! Output: [real(r8) (:)   ]  quantum efficiency, used only for C4 (mol CO2 / mol photons)
          !theta_cj   => photosyns_inst%theta_cj_patch         , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
-         theta_cj   => pftcon%theta_cj                       , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
+         !theta_cj   => pftcon%theta_cj                       , & ! Output: [real(r8) (:)   ]  empirical curvature parameter for ac, aj photosynthesis co-limitation
          bbb        => photosyns_inst%bbb_patch              , & ! Output: [real(r8) (:)   ]  Ball-Berry minimum leaf conductance (umol H2O/m**2/s)
          mbb        => photosyns_inst%mbb_patch              , & ! Output: [real(r8) (:)   ]  Ball-Berry slope of conductance-photosynthesis relationship
          rh_leaf    => photosyns_inst%rh_leaf_patch          , & ! Output: [real(r8) (:)   ]  fractional humidity at leaf surface (dimensionless)
@@ -3193,17 +3322,17 @@ contains
                jmaxc  = fth25 (jmaxhd, jmaxse)
                tpuc   = fth25 (tpuhd, tpuse)
                vcmax_z(p,sun,iv) = vcmax25_sun * ft(t_veg(p), vcmaxha) * fth(t_veg(p), vcmaxhd, vcmaxse, vcmaxc)
-               !write(*,*) 'vcmaxha = ', this%vcmaxha, ' (Description: vcmaxha value at line 3199.)'
+               write(*,*) 'vcmaxha = ', pftcon%vcmaxha, ' (Description: vcmaxha value at line 3201.)'
                jmax_z(p,sun,iv) = jmax25_sun * ft(t_veg(p), jmaxha) * fth(t_veg(p), jmaxhd, jmaxse, jmaxc)
-               !write(*,*) 'jmaxha = ', this%jmaxha, ' (Description: jmaxha value at line 3201.)'
+               write(*,*) 'jmaxha = ', pftcon%jmaxha, ' (Description: jmaxha value at line 3203.)'
                tpu_z(p,sun,iv) = tpu25_sun * ft(t_veg(p), tpuha) * fth(t_veg(p), tpuhd, tpuse, tpuc)
-               !write(*,*) 'tpuha = ', this%tpuha, ' (Description: tpuha value at line 3203.)'
+               write(*,*) 'tpuha = ', pftcon%tpuha, ' (Description: tpuha value at line 3205.)'
                vcmax_z(p,sha,iv) = vcmax25_sha * ft(t_veg(p), vcmaxha) * fth(t_veg(p), vcmaxhd, vcmaxse, vcmaxc)
-               !write(*,*) 'vcmaxha = ', this%vcmaxha, ' (Description: vcmaxha value at line 3205.)'
+               write(*,*) 'vcmaxha = ', pftcon%vcmaxha, ' (Description: vcmaxha value at line 3207.)'
                jmax_z(p,sha,iv) = jmax25_sha * ft(t_veg(p), jmaxha) * fth(t_veg(p), jmaxhd, jmaxse, jmaxc)
-               !write(*,*) 'jmaxha = ', this%jmaxha, ' (Description: jmaxha value at line 3207.)'
+               write(*,*) 'jmaxha = ', pftcon%jmaxha, ' (Description: jmaxha value at line 3209.)'
                tpu_z(p,sha,iv) = tpu25_sha * ft(t_veg(p), tpuha) * fth(t_veg(p), tpuhd, tpuse, tpuc)
-               !write(*,*) 'tpuha = ', this%tpuha, ' (Description: tpuha value at line 3209.)'
+               write(*,*) 'tpuha = ', pftcon%tpuha, ' (Description: tpuha value at line 3211.)'
                if (.not. c3flag(p)) then
                   vcmax_z(p,sun,iv) = vcmax25_sun * 2._r8**((t_veg(p)-(tfrz+25._r8))/10._r8)
                   vcmax_z(p,sun,iv) = vcmax_z(p,sun,iv) / (1._r8 + exp( 0.2_r8*((tfrz+15._r8)-t_veg(p)) ))
@@ -4042,7 +4171,7 @@ contains
          tpu_z      => photosyns_inst%tpu_z_phs_patch        , & ! Output: [real(r8) (:,:,:) ]  triose phosphate utilization rate (umol CO2/m**2/s)
          kp_z       => photosyns_inst%kp_z_phs_patch         , & ! Output: [real(r8) (:,:,:) ]  initial slope of CO2 response curve (C4 plants)
          !theta_cj   => photosyns_inst%theta_cj_patch         , & ! Output: [real(r8) (:)   ]    empirical curvature parameter for ac, aj photosynthesis co-limitation
-         theta_cj   => pftcon%theta_cj                       , & ! Output: [real(r8) (:)   ]    empirical curvature parameter for ac, aj photosynthesis co-limitation
+         !theta_cj   => pftcon%theta_cj                       , & ! Output: [real(r8) (:)   ]    empirical curvature parameter for ac, aj photosynthesis co-limitation
          bbb        => photosyns_inst%bbb_patch              , & ! Output: [real(r8) (:)   ]  Ball-Berry minimum leaf conductance (umol H2O/m**2/s)
          mbb        => photosyns_inst%mbb_patch              , & ! Output: [real(r8) (:)   ]  Ball-Berry slope of conductance-photosynthesis relationship
          an_sun     => photosyns_inst%an_sun_patch           , & ! Output: [real(r8) (:,:) ]  net sunlit leaf photosynthesis (umol CO2/m**2/s)
@@ -4094,7 +4223,8 @@ contains
     ! Gross photosynthesis. First co-limit ac and aj. Then co-limit ap
     
     ! Sunlit
-    aquad = theta_cj(p)
+    aquad = params_inst%theta_cj(ivt(p))
+    write(*,*) 'theta_cj_sunlit = ', params_inst%theta_cj(ivt(p)), ' (Description: theta_cj for sunlit value at line 4229.)'
     bquad = -(ac(p,sun,iv) + aj(p,sun,iv))
     cquad = ac(p,sun,iv) * aj(p,sun,iv)
     call quadratic (aquad, bquad, cquad, r1, r2)
@@ -4107,7 +4237,8 @@ contains
     ag(p,sun,iv) = max(0._r8,min(r1,r2))
     
     ! Shaded
-    aquad = theta_cj(p)
+    aquad = params_inst%theta_cj(ivt(p))
+    write(*,*) 'theta_cj_shaded = ', params_inst%theta_cj(ivt(p)), ' (Description: theta_cj for shaded value at line 4243.)'
     bquad = -(ac(p,sha,iv) + aj(p,sha,iv))
     cquad = ac(p,sha,iv) * aj(p,sha,iv)
     call quadratic (aquad, bquad, cquad, r1, r2)
