@@ -18,7 +18,7 @@ module SoilHydrologyMod
   use LandunitType      , only : lun                
   use ColumnType        , only : col                
   use PatchType         , only : patch
-  use pftconMod         , only : pftcon   
+  use pftconMod         , only : pftcon  
   !
   ! !PUBLIC TYPES:
   implicit none
@@ -152,9 +152,8 @@ contains
     associate(                                                        & 
          snl              =>    col%snl                             , & ! Input:  [integer  (:)   ]  minus number of snow layers                        
          dz               =>    col%dz                              , & ! Input:  [real(r8) (:,:) ]  layer depth (m)                                 
-         
-         fff_pftcon       =>    pftcon%fff                   , & ! Input:  [real(r8) (:)   ]  decay factor (m-1)
-         ivt              =>    patch%itype                         , & ! Input:  [integer  (:)   ]   
+
+         fff_pftcon       =>    pftcon%fff                          , & ! Input:  [real(r8) (:)   ]  decay factor (m-1)
          sucsat           =>    soilstate_inst%sucsat_col           , & ! Input:  [real(r8) (:,:) ]  minimum soil suction (mm)                       
          watsat           =>    soilstate_inst%watsat_col           , & ! Input:  [real(r8) (:,:) ]  volumetric soil water at saturation (porosity)  
          wtfact           =>    soilstate_inst%wtfact_col           , & ! Input:  [real(r8) (:)   ]  maximum saturated fraction for a gridcell         
@@ -214,7 +213,6 @@ contains
       do fc = 1, num_hydrologyc
          c = filter_hydrologyc(fc)
          fff(c) = fff_pftcon
-         !write(*,*) 'fff = ', this%fff_pftcon, ' (Description: fff value used at line 216 SoilHydrologyMod)'
          if (use_vichydro) then 
             top_moist(c) = 0._r8
             top_ice(c) = 0._r8
@@ -383,7 +381,7 @@ contains
           t_soisno         =>    temperature_inst%t_soisno_col       , & ! Input:  [real(r8) (:,:) ]  soil temperature (Kelvin)                       
 
           frac_h2osfc      =>    waterstate_inst%frac_h2osfc_col     , & ! Input:  [real(r8) (:)   ]  fraction of ground covered by surface water (0 to 1)
-          frac_h2osfc_nosnow  => waterstate_inst%frac_h2osfc_nosnow_col,    & ! Output: [real(r8) (:)   ] col fractional area with surface water greater than zero (if no snow present)
+          frac_h2osfc_nosnow  => waterstate_inst%frac_h2osfc_nosnow_col, & ! Output: [real(r8) (:)   ] col fractional area with surface water greater than zero (if no snow present)
           frac_sno         =>    waterstate_inst%frac_sno_eff_col    , & ! Input:  [real(r8) (:)   ]  fraction of ground covered by snow (0 to 1)       
           h2osoi_ice       =>    waterstate_inst%h2osoi_ice_col      , & ! Input:  [real(r8) (:,:) ]  ice lens (kg/m2)                                
           h2osfc           =>    waterstate_inst%h2osfc_col          , & ! Output: [real(r8) (:)   ]  surface water (mm)                                
@@ -640,9 +638,7 @@ contains
           z                  =>    col%z                                 , & ! Input:  [real(r8) (:,:) ]  layer depth (m)                                 
           zi                 =>    col%zi                                , & ! Input:  [real(r8) (:,:) ]  interface level below a "z" level (m)           
 
-          t_soisno           =>    temperature_inst%t_soisno_col         , & ! Input:  [real(r8) (:,:) ]  soil temperature (Kelvin)
-                  
-          ivt                =>    patch%itype                           , & ! Input:  [integer  (:)   ]
+          t_soisno           =>    temperature_inst%t_soisno_col         , & ! Input:  [real(r8) (:,:) ]  soil temperature (Kelvin)                       
 
           h2osfc             =>    waterstate_inst%h2osfc_col            , & ! Input:  [real(r8) (:)   ]  surface water (mm)                                
           h2osoi_liq         =>    waterstate_inst%h2osoi_liq_col        , & ! Output: [real(r8) (:,:) ]  liquid water (kg/m2)                            
@@ -964,10 +960,7 @@ contains
           z                  =>    col%z                                 , & ! Input:  [real(r8) (:,:) ] layer depth (m)                                 
           zi                 =>    col%zi                                , & ! Input:  [real(r8) (:,:) ] interface level below a "z" level (m)           
           dz                 =>    col%dz                                , & ! Input:  [real(r8) (:,:) ] layer depth (m)                                 
-          
           snl                =>    col%snl                               , & ! Input:  [integer  (:)   ] number of snow layers                              
-          
-          ivt                =>    patch%itype                           , & ! Input:  [integer  (:)   ]
 
           t_soisno           =>    temperature_inst%t_soisno_col         , & ! Input:  [real(r8) (:,:) ] soil temperature (Kelvin)                       
 
@@ -1011,20 +1004,18 @@ contains
           h2osoi_liq         =>    waterstate_inst%h2osoi_liq_col        , & ! Output: [real(r8) (:,:) ] liquid water (kg/m2)                            
           h2osoi_ice         =>    waterstate_inst%h2osoi_ice_col          & ! Output: [real(r8) (:,:) ] ice lens (kg/m2)                                
           )
-
+          
        ! Get time step
-
        dtime = get_step_size()
-
+       
        ! Convert layer thicknesses from m to mm
-
        do j = 1,nlevsoi
           do fc = 1, num_hydrologyc
              c = filter_hydrologyc(fc)
              dzmm(c,j) = dz(c,j)*1.e3_r8
 
              vol_ice = min(watsat(c,j), h2osoi_ice(c,j)/(dz(c,j)*denice))
-             icefrac(c,j) = min(1._r8,vol_ice/watsat(c,j))          
+             icefrac(c,j) = min(1._r8,vol_ice/watsat(c,j))
           end do
        end do
 
@@ -2008,9 +1999,6 @@ contains
           watsat             =>    soilstate_inst%watsat_col             , & ! Input:  [real(r8) (:,:) ] volumetric soil water at saturation (porosity)  
           eff_porosity       =>    soilstate_inst%eff_porosity_col       , & ! Input:  [real(r8) (:,:) ] effective porosity = porosity - vol_ice         
           hk_l               =>    soilstate_inst%hk_l_col               , & ! Input:  [real(r8) (:,:) ] hydraulic conductivity (mm/s)                    
-          
-          !fff                =>    pftcon%fff                           , & ! Input:  [real(r8) (:)   ]
-          ivt                =>    patch%itype                           , & ! Input:  [real(r8) (:)   ]
 
           depth              =>    soilhydrology_inst%depth_col          , & ! Input:  [real(r8) (:,:) ] VIC soil depth                                   
           c_param            =>    soilhydrology_inst%c_param_col        , & ! Input:  [real(r8) (:)   ] baseflow exponent (Qb)                             
