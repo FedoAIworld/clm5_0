@@ -1,3 +1,9 @@
+Branch `release-clm5.0-add-params-dev`.
+
+Changes compared to CLM5-release:
+- parameter input
+- source code changes in `biogeophys` and `main`
+
 # CTSM
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3739617.svg)](https://doi.org/10.5281/zenodo.3739617)
