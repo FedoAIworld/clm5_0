@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 #
 #
 # Batch script to submit to create mapping files for all standard
@@ -7,16 +7,16 @@
 # single point resolution, you should set '#PBS -n' to 1, and be sure
 # that '-t regional' is specified in cmdargs.
 #
-#SBATCH --nodes=1
-##SBATCH --ntasks-per-node=4
-##SBATCH --cpus-per-task=1
-#SBATCH --output=job-out.%j
-#SBATCH --error=job-err.%j
-#SBATCH --time=2:00:00
-#SBATCH --partition=dc-cpu
-#SBATCH --account=jicg41
-
-export CSMDATA=/p/scratch/cjicg41/eloundou1/CLM5_DATA/inputdata
+# cheyenne specific batch commands:
+#PBS -A P93300606
+#PBS -N regrid
+#PBS -q regular
+#PBS -l select=4:ncpus=2:mpiprocs=2:mem=109GB
+#PBS -l walltime=2:00:00
+#PBS -j oe
+#PBS -me
+#PBS -V
+#PBS -S /bin/bash
 
 #----------------------------------------------------------------------
 # Set parameters
