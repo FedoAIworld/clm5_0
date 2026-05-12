@@ -1,5 +1,7 @@
 Branch `release-clm5.0-add-params`.
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20134023.svg)](https://doi.org/10.5281/zenodo.20134023)
+
 This branch contains modifications on some modules for our study on ensemble simulations with perturbed parameters in the Community Land Model v.5.0 (CLM5). The modification allows for easy manipulation of hard-coded parameters. The parameters in the **PhotosynthesisMod**, **LunaMod**, and **SoilHydrologyMod** were added to the CLM parameter file. Similarly, the soil hydraulic parameters in the **SoilStateInitTimeConstMod** were added in the surface data file.
 
 # Parameter Extraction
